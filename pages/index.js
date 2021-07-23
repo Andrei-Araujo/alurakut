@@ -1,3 +1,5 @@
+import jwt from "jsonwebtoken";
+import nookies from "nookies";
 import React from "react";
 import Box from "../src/components/Box";
 import MainGrid from "../src/components/MainGrid";
@@ -54,8 +56,8 @@ function ProfileRelationsBox(propriedades) {
   );
 }
 
-export default function Home() {
-  const usuarioAleatorio = "omariosouto";
+export default function Home(props) {
+  const usuarioAleatorio = props.githubUser;
   const [comunidades, setComunidades] = React.useState([]);
   // const comunidades = comunidades[0];
   // const alteradorDeComunidades/setComunidades = comunidades[1];
@@ -223,4 +225,40 @@ export default function Home() {
       </MainGrid>
     </>
   );
+}
+
+export async function getServerSideProps(context) {
+  const cookies = nookies.get(context);
+  const token = cookies.USER_TOKEN;
+  /*const { githubUser } = jwt.decode(token);
+  console.log("Token decodificado"); // só aparece no console do servidor, e nao no client*/
+
+  const { isAuthenticated } = await fetch(
+    "https://alurakut.vercel.app/api/auth",
+    {
+      headers: {
+        Authorization: token,
+      },
+    }
+  ).then((resposta) => resposta.json());
+
+  console.log("Authenticated: ", isAuthenticated);
+
+  if (!isAuthenticated) {
+    return {
+      redirect: {
+        destination: "/login",
+        permanent: false,
+      },
+    };
+  }
+
+  const { githubUser } = jwt.decode(token);
+  console.log("Token decodificado");
+
+  return {
+    props: {
+      githubUser: githubUser,
+    }, //vai ser passada à pag como props
+  };
 }
